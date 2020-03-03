@@ -20,11 +20,12 @@ Usage:
 
 Run from within a virtual environment. Afterwards, refresh the jupyter
 hub's server page and the virtual environment will be listed under the
-"New" button.  The environment will also have inherited any settings to 
+"New" button.  The environment will also have inherited any settings 
+to the following environment variables:
+
 """
-+' '.join(EXPORTVARS)+
++', '.join(EXPORTVARS)+
 """
-Explanation:
 
 This automates the following steps:
 
