@@ -11,7 +11,7 @@ EXPORTVARS = [ 'PATH','LD_LIBRARY_PATH','LIBRARY_PATH',
                'PYTHONPATH', 'EBPYTHONPREFIXES' ]
 
 def help():
-    print """
+    print("""
 venv2jup: allows a virtual environment to be used by jupyter hub.
 
 Usage:
@@ -41,7 +41,7 @@ This automates the following steps:
     reproduce the current environment.
 
 Ramses van Zon, March 2020
-""" 
+""") 
 
 import copy, json, shutil, os, sys
 
