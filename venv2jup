@@ -1,8 +1,13 @@
 #!/usr/bin/env python
+
 import copy, json, shutil, os, sys
 
+EXPORTVARS = [ 'PATH','LD_LIBRARY_PATH','LIBRARY_PATH',
+               'MANPATH','CPATH','PKG_CONFIG_PATH',
+               'PYTHONPATH', 'EBPYTHONPREFIXES' ]
+
 def add_environment_to_kernel_json(kerneljsonfile, environ):
-    """Adds a path to the environment variable envvar in the virtual
+    """Inserts environment variables in environ into the virtual
     environment's kernel.json file for use in jupyter."""
     with open(kerneljsonfile) as infile:
         kjin = json.load(infile)
@@ -14,7 +19,7 @@ def add_environment_to_kernel_json(kerneljsonfile, environ):
             kjout["env"][envvar] = environ[envvar]
         else:
             if not environ[envvar] in kjout["env"][envvar]:
-                kjout["env"][envvar] += ":" + environ[envvar]
+                kjout["env"][envvar] += os.pathsep + environ[envvar]
     if kjin != kjout:
         backupfile = kerneljsonfile + "~"
         while os.path.isfile(backupfile):
@@ -26,13 +31,16 @@ def add_environment_to_kernel_json(kerneljsonfile, environ):
     else:
         return False
 
+
 def detect_virtualenv():
     """detect what venv we're in."""
     if not "VIRTUAL_ENV" in os.environ:
-        print("No virtual environment found; did you forget to source its activate script?"); sys.exit(3)
+        print("No virtual environment found; did you forget to source its activate script?")
+        sys.exit(3)
     venvname = os.environ["VIRTUAL_ENV"].split(os.sep)[-1]
     print("Found virtual environment "+venvname)
     return venvname
+
 
 def install_ipykernel():
     """check that ipykernel is installed"""
@@ -41,55 +49,51 @@ def install_ipykernel():
         print("Found ipykernel package")
     except:
         print("Ipykernel package is not found; installing now with 'pip install ipykernel'")
-        os.system("pip install ipykernel")
+        exitval = os.system("pip install ipykernel")
+        if exitval != 0:
+            print("Command failed")
+            sys.exit(exitval)
+
 
 def register_with_jupyter(venvname):
     """check if venv was registered for use with ipython/jupyter"""
     kerneljson = os.environ["HOME"] +"/.local/share/jupyter/kernels/"+venvname.lower() + "/kernel.json"
     if not os.path.isfile(kerneljson):
         print("No kernel registration found, installing now with '"+"python -m ipykernel install --name "+venvname+" --user'")
-        os.system("python -m ipykernel install --name "+venvname+" --user")
+        exitval = os.system("python -m ipykernel install --name "+venvname+" --user")
+        if exitval != 0:
+            print("Command failed")
+            sys.exit(exitval)
     else:
         print("Found kernel.json for jupyter")
-    return kerneljson
+    if not os.path.isfile(kerneljson):
+        print("Cannot find "+kerneljson+" for jupyter")
+        sys.exit(2)
+    else:
+        return kerneljson
 
-def collect_environment(base={}):
+def collect_environment(exportvars, base={}):
     """select environment variables and add them to base"""
     collected = copy.deepcopy(base)
-    for envvar in ['PATH','LD_LIBRARY_PATH','LIBRARY_PATH',
-                   'MANPATH','CPATH','PKG_CONFIG_PATH',
-                   'PYTHONPATH', 'EBPYTHONPREFIXES']:
+    for envvar in exportvars:
         if envvar in os.environ:
             if envvar in collected and not collected[envvar] in os.environ[envvar]:
-                collected[envvar] = os.environ[envvar] + ":" + collected[envvar]
+                collected[envvar] = os.environ[envvar] + os.pathsep + collected[envvar]
             else:
                 collected[envvar] = os.environ[envvar]
     return collected
 
-def essential_environment():
-    """construct essential environment for site-specific things to work.
-    Currently, for Niagara: adds core/lib64 to LD_LIBRARY_PATH"""
-    essential = {}
-    newldlibpath=None
-    if "LD_LIBRARY_PATH" in os.environ:
-        for potentialpath in os.environ["LD_LIBRARY_PATH"].split(":"):
-            if "/core/lib" in potentialpath:
-                newldlibpath = potentialpath
-                break
-    if not newldlibpath:
-        newldlibpath = "/scinet/niagara/software/2019b/core/lib64"
-    if os.path.isdir(newldlibpath):
-        essential['LD_LIBRARY_PATH'] = newldlibpath
-    return essential
 
-if __name__ == "__main__":
+def main():
     venvname = detect_virtualenv()
     install_ipykernel()
     kerneljson = register_with_jupyter(venvname)
-    environ = collect_environment(essential_environment())
+    environ = collect_environment(EXPORTVARS)
     if add_environment_to_kernel_json(kerneljson, environ):
-        print("Changes written to "+kerneljson) 
+        print("Environment changes written to "+kerneljson) 
     else:
         print("No changes required to "+kerneljson)
 
 
+if __name__ == "__main__":
+    main()
