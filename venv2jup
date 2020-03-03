@@ -1,10 +1,49 @@
 #!/usr/bin/env python
-
-import copy, json, shutil, os, sys
+#
+# venv2jup: exports a virtual environment to be recognized by a jupyter hub.
+#
+# Run from within a virtual environment. Details in the 'help' function.
+#
+# Ramses van Zon, March 2020
 
 EXPORTVARS = [ 'PATH','LD_LIBRARY_PATH','LIBRARY_PATH',
                'MANPATH','CPATH','PKG_CONFIG_PATH',
                'PYTHONPATH', 'EBPYTHONPREFIXES' ]
+
+def help():
+    print """
+venv2jup: allows a virtual environment to be used by jupyter hub.
+
+Usage:
+
+  venv2jup [--help|-h]
+
+Run from within a virtual environment. Afterwards, refresh the jupyter
+hub's server page and the virtual environment will be listed under the
+"New" button.  The environment will also have inherited any settings to 
+"""
++' '.join(EXPORTVARS)+
+"""
+Explanation:
+
+This automates the following steps:
+
+ 1. Deduces the virtual environment name from the VIRTUAL_ENV 
+    environment variable.
+
+ 2. Install ipykernal in the virtual environment, which allows 
+    it to operate as a kernel.
+
+ 3. Register the virtual environment as a kernel in 
+    ~/.local/share/jupyter/kernels/<NAME>/kernel.json
+
+ 4. Adds environment variables to that kernel.json file to 
+    reproduce the current environment.
+
+Ramses van Zon, March 2020
+""" 
+
+import copy, json, shutil, os, sys
 
 def add_environment_to_kernel_json(kerneljsonfile, environ):
     """Inserts environment variables in environ into the virtual
@@ -96,4 +135,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 1: # no arguments
+        help()
+    else:
+        main()
