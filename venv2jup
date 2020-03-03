@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+import copy, json, shutil, os, sys
+
+def add_library_path_to_kernel_json(kerneljsonfile, ldlibrarypath):
+    """Adds a path to the LD_LIBRARY_PATH specified in the 
+    virtual environment's kernel.json file for use in jupyter"""
+    with open(kerneljsonfile) as infile:
+        kjin = json.load(infile)
+    kjout = copy.deepcopy(kjin)
+    if not "env" in kjout:
+        kjout["env"] = {}
+    if not "LD_LIBRARY_PATH" in kjout["env"]:
+        kjout["env"]["LD_LIBRARY_PATH"] = ldlibrarypath
+    else:
+        if not ldlibrarypath in kjout["env"]["LD_LIBRARY_PATH"]:
+            kjout["env"]["LD_LIBRARY_PATH"] += ":" + ldlibrarypath
+    if kjin != kjout:
+        backupfile = kerneljsonfile + "~"
+        while os.path.isfile(backupfile):
+            backupfile += "~"
+        shutil.copyfile(kerneljsonfile, backupfile)
+        with open(kerneljsonfile,"w") as oufile:
+            json.dump(kjout,oufile, indent=1)
+        return True
+    else:
+        return False
+
+if __name__ == "__main__":
+    # detect what venv we're in
+    if not "VIRTUAL_ENV" in os.environ:
+        print("No virtual environment found; did you forget to source its activate script?"); sys.exit(3)
+    venvname = os.environ["VIRTUAL_ENV"].split(os.sep)[-1]    
+    print("Found virtual environment "+venvname)
+    # check that ipykernel is installed
+    try:
+        import ipykernel
+        print("Found ipykernel package")
+    except:
+        print("Ipykernel package is not found; installing now with 'pip install ipykernel'")
+        os.system("pip install ipykernel")
+    # check if venv was registered for use with ipython/jupyter
+    kerneljson = os.environ["HOME"] +"/.local/share/jupyter/kernels/"+venvname.lower() + "/kernel.json"
+    if not os.path.isfile(kerneljson):
+        print("No kernel registration found, installing now with '"+"python -m ipykernel install --name "+venvname+" --user'")
+        os.system("python -m ipykernel install --name "+venvname+" --user")
+    else:
+        print("Found kernel.json for jupyter")
+    # detect which library path to add
+    newpath=None
+    if "LD_LIBRARY_PATH" in os.environ:
+        for potentialpath in os.environ["LD_LIBRARY_PATH"].split(":"):
+            if "/core/lib" in potentialpath:
+                newpath = potentialpath
+                break    
+    if not newpath:
+        newpath = "/scinet/niagara/software/2019b/core/lib64"
+    if not os.path.isdir(newpath):
+        print("Error: Path to add ("+newpath+") does not exist."); sys.exit(4)
+    else:
+        print("Found path "+newpath)
+    # add to kernel.json if not already in it
+    if add_library_path_to_kernel_json(kerneljson, newpath):  
+        print("Changes written to "+kerneljson)            
+    else:
+        print("No changes required to "+kerneljson)
+
