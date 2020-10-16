@@ -32,7 +32,7 @@ This automates the following steps:
  1. Deduces the virtual environment name from the VIRTUAL_ENV 
     environment variable.
 
- 2. Install ipykernal in the virtual environment, which allows 
+ 2. Install ipykernel in the virtual environment, which allows 
     it to operate as a kernel.
 
  3. Register the virtual environment as a kernel in 
