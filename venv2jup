@@ -8,8 +8,9 @@
 
 EXPORTVARS = [ 'PATH','LD_LIBRARY_PATH','LIBRARY_PATH',
                'MANPATH','CPATH','PKG_CONFIG_PATH',
-               'PYTHONPATH', 'EBPYTHONPREFIXES' ]
-
+               'PYTHONPATH', 'EBPYTHONPREFIXES',
+               'JAVA_HOME',
+               'CMAKE_PREFIX_PATH', 'PKG_CONFIG_PATH', 'FI_PROVIDER_PATH' ]
 def help():
     print("""
 venv2jup: allows a virtual environment to be used by jupyter hub.
