@@ -130,6 +130,10 @@ def main():
     install_ipykernel()
     kerneljson = register_with_jupyter(venvname)
     environ = collect_environment(EXPORTVARS)
+    if 'LD_LIBRARY_PATH' in environ:
+        environ['LD_LIBRARY_PATH']+=os.pathsep+'/scinet/niagara/rocky9cc/lib64'
+    else:
+        environ['LD_LIBRARY_PATH']='/scinet/niagara/rocky9cc/lib64'
     if add_environment_to_kernel_json(kerneljson, environ):
         print("Environment changes written to "+kerneljson) 
     else:
