@@ -92,10 +92,14 @@ def detect_virtualenv():
 
 
 def install_ipykernel():
-    """check that ipykernel is installed"""
+    """ensure that ipykernel is installed"""
     command = None
     if condamode:
-        command = "conda install --yes ipykernel"
+        exitval = os.system("conda list ipykernel --json | grep ipykernel")
+        if exitval == 0:
+            print("Found ipykernel package")
+        else:
+            command = "conda install --override-channels --channel defaults --yes ipykernel"
     else:
         try:
             import ipykernel
@@ -109,7 +113,7 @@ def install_ipykernel():
             else:
                 command = "pip install ipykernel"
     if command:
-        print("Ipykernel package will be installed or upgraded with '"+command+"'")
+        print("Ipykernel package will be installed with '"+command+"'")
         exitval = os.system(command)
         if exitval != 0:
             print("Command failed")
@@ -117,7 +121,7 @@ def install_ipykernel():
 
 
 def register_with_jupyter(venvname):
-    """check if venv was registered for use with ipython/jupyter"""
+    """ensure this venv was registered for use with ipython/jupyter"""
     kerneljson = os.environ["HOME"] +"/.local/share/jupyter/kernels/"+venvname.lower() + "/kernel.json"
     if not os.path.isfile(kerneljson):
         print("No kernel registration found, installing now with '"+"python -m ipykernel install --name "+venvname+" --user'")
